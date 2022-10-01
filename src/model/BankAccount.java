@@ -7,13 +7,19 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class BankAccount {
-    private long amount;
-    private final String accountName;
-    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
+    // số dư của tài khoản ngân hàng
+    private long amount;
+    // tên của tài khoản ngân hàng
+    private final String accountName;
+    // Format ngày tháng
+    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+    // lấy giá trị thời gian hiện hành trong các thao tác
     LocalDateTime now;
 
+    // gán các trạng thái vào khu vực trạng thái của giao diện chính
     private final JTextArea notificationTA;
+    // gán số dư vào giao diện chính (nếu cần thiết)
     private final JLabel amountLabel;
 
     public String getAccountName() {
@@ -29,22 +35,20 @@ public class BankAccount {
     }
 
     /**
-     * Hàm kiểm tra số dư tài khoản
+     * Hàm kiểm tra số dư tài khoản có đủ điều kiện để thưc hiện giao dịch
      *
      * @param withdrawAmount : số tiền cần rút
      * @return true nếu có thể rút tiền ngược lại false
      */
     private boolean checkAccountBalance(long withdrawAmount, String user) {
-
-        // giả lập đọc database
+        // hiện thị thông tin
         now = LocalDateTime.now();
-        // giả lập đọc database
         this.notificationTA.append(
                 MessageFormat.format(
                         "[{0}][{1}] Đang kiểm tra số dư...\n\n", dtf.format(now), user
                 )
         );
-
+        // giả lập đọc database
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
@@ -66,7 +70,8 @@ public class BankAccount {
         this.notificationTA.append(MessageFormat.format("[{0}][{1}][{2}] cần rút: {3}\n\n", dtf.format(now), user, this.amount, withdrawAmount));
 
         // giả lập xử lý kiểm tra số dư và thực hiện giao dịch
-
+        // nếu số dư đủ thì tiến hành rút
+        // ngược lại hiện thông báo không thể rút
         if (checkAccountBalance(withdrawAmount, user)) {
             // giả lập thay đổi số dư trong database
             try {
@@ -83,6 +88,7 @@ public class BankAccount {
                     )
             );
         }
+        // hiển thị số dư còn lại
         now = LocalDateTime.now();
         if (amountLabel != null) amountLabel.setText(MessageFormat.format("Số dư: {0}", amount));
         this.notificationTA.append(MessageFormat.format(
@@ -91,7 +97,11 @@ public class BankAccount {
         );
     }
 
-
+    /**
+     * Hàm thực hiện nạp tiền
+     * @param user tên người dùng đang thực hiện nạp
+     * @param depositAmount số tiền nạp vào
+     */
     private void deposit(String user, long depositAmount) {
         // in thông tin người rút
         now = LocalDateTime.now();
@@ -114,8 +124,13 @@ public class BankAccount {
         notify();
     }
 
+    /**
+     * Hàm thực hiện thanh toán khi số dư khả dụng
+     * @param user tên người dùng đặt lệnh thanh toán
+     * @param payAmount số tiền cần thanh toán
+     */
     private void payWhenBalanceEnough(String user, long payAmount) {
-        // In thông tin người rút
+        // In thông tin người thanh toán
         now = LocalDateTime.now();
         this.notificationTA.append(MessageFormat.format("[{0}][{1}][{2}] cần thanh toán: {3}\n\n", dtf.format(now), user, this.amount, payAmount));
 
@@ -147,6 +162,12 @@ public class BankAccount {
         );
     }
 
+    /**
+     * Hàm chuyển tiền sẽ xảy ra deadlock
+     * @param toAccount : tài khoản nhận tiền
+     * @param transferAmount : số tiền được chuyển
+     * @param user : người dùng thực hiện chuyển tiền
+     */
     public void deadlockTransfer(BankAccount toAccount, long transferAmount, String user) {
         synchronized (this) {
             // Rút tiền từ tài khoản này
@@ -155,27 +176,44 @@ public class BankAccount {
             toAccount.depositWithSync(toAccount.getAccountName(), transferAmount);
         }
     }
+    /**
+     * Hàm chuyển tiền giải quyết deadlock
+     * @param toAccount : tài khoản nhận tiền
+     * @param transferAmount : số tiền được chuyển
+     * @param user : người dùng thực hiện chuyển tiền
+     */
+    public void deadlockSolvedTransfer(BankAccount toAccount, long transferAmount, String user) {
+            // Rút tiền từ tài khoản này
+            this.withdrawWithSync(user, transferAmount);
+            // Nạp tiền vào toAccount
+            toAccount.depositWithSync(toAccount.getAccountName(), transferAmount);
+    }
+
 
     /**
-     * @param user
-     * @param withdrawAmount
+     * Hàm thực hiện rút tiền theo cơ chế bất đồng bộ
+     * Hàm này sẽ được gọi trong luồng
+     * @param user tên người thực hiện rút
+     * @param withdrawAmount số tiền cần rút
      */
     public void withdrawWithoutSync(String user, long withdrawAmount) {
         this.withdraw(user, withdrawAmount);
     }
 
     /**
-     * @param user
-     * @param withdrawAmount
+     * Hàm thực hiện rút tiền theo cơ chế mutual exclusive
+     * Hàm này sẽ được gọi trong luồng
+     * @param user tên người thực hiện rút
+     * @param withdrawAmount số tiền cần rút
      */
     public synchronized void withdrawWithSync(String user, long withdrawAmount) {
         this.withdraw(user, withdrawAmount);
     }
 
     /**
-     * Hàm nạp tiền theo cơ chế đồng bộ hóa
-     *
-     * @param user          tên của người đang thực hiện rút tiền
+     * Hàm nạp tiền được đồng bộ
+     * Hàm này được gọi trong luồng
+     * @param user          tên của người đang thực hiện nạp tiền
      * @param depositAmount số tiền cần nạp
      */
     public synchronized void depositWithSync(String user, long depositAmount) {
@@ -184,13 +222,11 @@ public class BankAccount {
 
     /**
      * Đặt lệnh tự động thanh toán theo cơ chế đồng bộ hóa
-     *
      * @param user      tên người đang đặt lệnh thanh toán
      * @param payAmount số tiền cần thanh toán
      */
     public synchronized void payWhenBalanceEnoughWithSync(String user, long payAmount) {
         payWhenBalanceEnough(user, payAmount);
     }
-
 
 }
