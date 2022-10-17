@@ -64,11 +64,12 @@ public class BankAccount {
      * @param user           tên của người đang thực hiện rút tiền
      * @param withdrawAmount số tiền cần rút
      */
-    private void withdraw(String user, long withdrawAmount) {
+    private boolean withdraw(String user, long withdrawAmount) {
+        boolean status = false;
+
         // In thông tin người rút
         now = LocalDateTime.now();
         this.notificationTA.append(MessageFormat.format("[{0}][{1}][{2}] cần rút: {3}\n\n", dtf.format(now), user, this.amount, withdrawAmount));
-
         // giả lập xử lý kiểm tra số dư và thực hiện giao dịch
         // nếu số dư đủ thì tiến hành rút
         // ngược lại hiện thông báo không thể rút
@@ -80,6 +81,7 @@ public class BankAccount {
                 throw new RuntimeException(e);
             }
             this.amount -= withdrawAmount;
+            status = true;
         } else {
             now = LocalDateTime.now();
             this.notificationTA.append(
@@ -95,6 +97,7 @@ public class BankAccount {
                         "[{0}][{1}] số dư: {2}\n\n", dtf.format(now), user, this.amount
                 )
         );
+        return status;
     }
 
     /**
@@ -171,9 +174,10 @@ public class BankAccount {
     public void deadlockTransfer(BankAccount toAccount, long transferAmount, String user) {
         synchronized (this) {
             // Rút tiền từ tài khoản này
-            this.withdrawWithSync(user, transferAmount);
-            // Nạp tiền vào toAccount
-            toAccount.depositWithSync(toAccount.getAccountName(), transferAmount);
+            if(this.withdrawWithSync(user, transferAmount)){
+                // Nạp tiền vào toAccount
+                toAccount.depositWithSync(toAccount.getAccountName(), transferAmount);
+            }
         }
     }
     /**
@@ -183,10 +187,12 @@ public class BankAccount {
      * @param user : người dùng thực hiện chuyển tiền
      */
     public void deadlockSolvedTransfer(BankAccount toAccount, long transferAmount, String user) {
-            // Rút tiền từ tài khoản này
-            this.withdrawWithSync(user, transferAmount);
+        // Rút tiền từ tài khoản này
+        if(this.withdrawWithSync(user, transferAmount)){
             // Nạp tiền vào toAccount
             toAccount.depositWithSync(toAccount.getAccountName(), transferAmount);
+        }
+
     }
 
 
@@ -206,8 +212,8 @@ public class BankAccount {
      * @param user tên người thực hiện rút
      * @param withdrawAmount số tiền cần rút
      */
-    public synchronized void withdrawWithSync(String user, long withdrawAmount) {
-        this.withdraw(user, withdrawAmount);
+    public synchronized boolean withdrawWithSync(String user, long withdrawAmount) {
+        return this.withdraw(user, withdrawAmount);
     }
 
     /**

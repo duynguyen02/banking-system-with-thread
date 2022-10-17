@@ -222,7 +222,7 @@ public class MainView extends JFrame implements ActionListener {
         // nếu nút này được chọn thì mô phỏng bất đồng bộ
         if (e.getSource() == nonSyncBtn) {
             // xóa các trạng thái trong vùng trạng thái
-            this.notificationArea.setText("[MÔ PHỎNG RÚT TIỀN BẤT ĐỒNG BỘ]");
+            this.notificationArea.setText("[MÔ PHỎNG RÚT TIỀN BẤT ĐỒNG BỘ]\n");
 
             // gán số dư vào giao diên
             amountLabel.setText(MessageFormat.format("Số dư: {0}", amount));
@@ -255,7 +255,7 @@ public class MainView extends JFrame implements ActionListener {
         // nếu nút này được chọn thì mô phỏng đồng bộ cooperation
         if (e.getSource() == cooperationBtn) {
             // xóa các trạng thái trong vùng trạng thái
-            this.notificationArea.setText("[MÔ PHỎNG ĐỒNG BỘ COOPERATION]");
+            this.notificationArea.setText("[MÔ PHỎNG ĐỒNG BỘ COOPERATION]\n");
 
             // gán số dư vào giao diên
             amountLabel.setText(MessageFormat.format("Số dư: {0}", amount));
@@ -287,7 +287,7 @@ public class MainView extends JFrame implements ActionListener {
         // nếu nút này được chọn thì mô phỏng deadlock
         if (e.getSource() == deadLockBtn) {
             // xóa các trạng thái trong vùng trạng thái
-            this.notificationArea.setText("[MÔ PHỎNG XẢY RA DEADLOCK]");
+            this.notificationArea.setText("[MÔ PHỎNG XẢY RA DEADLOCK]\n");
 
             // gán số dư vào giao diên
             amountLabel.setText(MessageFormat.format("Số dư: {0}", amount));
